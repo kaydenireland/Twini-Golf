@@ -17,6 +17,7 @@ window_h = 480
 window = pygame.display.set_mode((window_w, window_h))
 pygame.display.set_caption('Twini-Golf')
 
+
 # Load Font
 font24 = pygame.font.Font("assets/fonts/font.ttf", 24)
 font48 = pygame.font.Font("assets/fonts/font.ttf", 48)
@@ -25,10 +26,13 @@ font48 = pygame.font.Font("assets/fonts/font.ttf", 48)
 swing_sfx = pygame.mixer.Sound("assets/sounds/swing.mp3")
 
 # Load Textures
+icon = pygame.image.load("assets/textures/icon.png")
 ball_img = pygame.image.load("assets/textures/ball.png")
 ball_shadow_img = pygame.image.load("assets/textures/ball_shadow.png")
 bg_img = pygame.image.load("assets/textures/bg.png")
 arrow_img = pygame.image.load("assets/textures/arrow.png")
+
+pygame.display.set_icon(icon)
 
 # Game Variables
 game_state = 1  # 0 - title, 1 - game, 2 - end
