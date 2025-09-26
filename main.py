@@ -30,6 +30,7 @@ bg_img = pygame.image.load("assets/textures/bg.png")
 # Game Variables
 game_state = 1  # 0 - title, 1 - game, 2 - end
 friction = .015
+ball_width = 16
 
 
 # ------------------------
@@ -55,6 +56,26 @@ class Ball:
         xvelo, yvelo = self.velo
         # Returns hypotenuse of the velocity vectors
         return math.sqrt((xvelo*xvelo)+(yvelo*yvelo))
+    
+    def get_next_velocity(self):
+        xvelo, yvelo = self.velo[0], self.velo[1]
+        speed = math.sqrt((xvelo*xvelo)+(yvelo*yvelo))
+        
+        if (speed > 0):
+            xdir = xvelo / speed
+            ydir = yvelo / speed
+
+            speed = speed - friction
+            if (speed < 0):
+                speed = 0
+            
+
+            xvelo = xdir * speed
+            yvelo = ydir * speed
+        else:
+            xvelo, yvelo = 0, 0
+        
+        return xvelo, yvelo
     
     def set_position(self, x, y):
         self.pos = [x, y]
@@ -106,20 +127,33 @@ class Ball:
         pygame.mixer.Sound.play(swing_sfx)
         
     def check_for_collision(self, x, y, w, h):
+        
+        # Get Current Position
         xpos, ypos = self.pos[0], self.pos[1]
         xvelo, yvelo = self.velo[0], self.velo[1]
-        if (xpos > w):
+        
+        # Predicts Next Position
+        center_line = w/2
+        velos = self.get_next_velocity()
+        next_x = velos[0] + xpos
+        next_y = velos[1] + ypos
+        
+        # Check for collision with outer wall
+        if (xpos + ball_width < w) and (next_x + ball_width > w):
             xvelo = -xvelo
-            xpos = w - 1
-        elif (xpos < x):
+        elif (xpos > x) and (next_x < x):
+            xvelo = -xvelo          
+            
+        if (ypos + ball_width < h) and (next_y + ball_width > h):
+            yvelo = -yvelo
+        elif (ypos > y) and (next_y < y):
+            yvelo = -yvelo
+            
+        
+        # If next position is over center wall, flip velo
+        if(xpos + ball_width < center_line and next_x > center_line - ball_width) or (xpos > center_line and next_x < center_line):
             xvelo = -xvelo
-            xpos = x + 1
-        if (ypos > h):
-            yvelo = -yvelo
-            ypos = h - 1
-        elif (ypos < y):
-            yvelo = -yvelo
-            ypos = y + 1
+        
         
         self.set_position(xpos, ypos)
         self.set_velocity(xvelo, yvelo)
