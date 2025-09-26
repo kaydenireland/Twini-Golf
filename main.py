@@ -18,7 +18,8 @@ window = pygame.display.set_mode((window_w, window_h))
 pygame.display.set_caption('Twini-Golf')
 
 # Load Font
-font = pygame.font.Font("assets/fonts/font.ttf", 48)
+font24 = pygame.font.Font("assets/fonts/font.ttf", 24)
+font48 = pygame.font.Font("assets/fonts/font.ttf", 48)
 
 # Load Sounds
 swing_sfx = pygame.mixer.Sound("assets/sounds/swing.mp3")
@@ -163,6 +164,8 @@ def play():
     global game_state
     global friction
     global balls
+    global stroke_count
+    global hole_number
     
     # ------------------------
     # Initialize Game Objects/Variables
@@ -170,6 +173,9 @@ def play():
     
     initMousePos = [0, 0]
     endMousePos = [0, 0]
+    
+    stroke_count = 0
+    hole_number = 1
     
     balls = [Ball(160, 360), Ball(480, 360)]
     
@@ -187,6 +193,7 @@ def play():
                 endMousePos = pygame.mouse.get_pos()
                 balls[0].hit_ball(initMousePos, endMousePos)
                 balls[1].hit_ball(initMousePos, endMousePos)
+                stroke_count = stroke_count + 1
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     balls[0].reset()
@@ -212,6 +219,28 @@ def draw_objects():
     
     balls[0].draw()
     balls[1].draw()
+    
+    draw_scoreboard()
+
+def draw_scoreboard():
+    show_stroke_text = font24.render("STROKES: " + str(stroke_count), True, (255, 255, 255))
+    stroke_location = show_stroke_text.get_rect(center=(window_w/2, 16))
+    
+    show_stroke_text_shadow = font24.render("STROKES: " + str(stroke_count), True, (0, 0, 0))
+    stroke_shadow_location = show_stroke_text_shadow.get_rect(center=(window_w/2, 19))
+    
+    # Text Container
+    # Create a temporary surface with alpha to allow transparency
+    rect_surf = pygame.Surface((192, 32), pygame.SRCALPHA)
+
+    # Draw a semi-transparent black rect (alpha=128 out of 255)
+    pygame.draw.rect(rect_surf, (0, 0, 0, 128), (0, 0, 192, 32), border_bottom_left_radius=5, border_bottom_right_radius=5)
+
+    # Blit it onto the window at the desired position
+    window.blit(rect_surf, ((window_w/2) - 96, 0))
+    
+    window.blit(show_stroke_text_shadow, stroke_shadow_location)
+    window.blit(show_stroke_text, stroke_location)
     
 def update_objects():
     balls[0].update()
