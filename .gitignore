@@ -5,3 +5,5 @@ dist
 dist/*
 build
 build.*
+.vscode
+.vscode/*
