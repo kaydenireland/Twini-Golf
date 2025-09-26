@@ -53,6 +53,10 @@ class Ball:
         self.change_position()
         
     # Getters/Setters
+    
+    def is_moving(self):
+        return self.get_speed() > 0        
+        
     def get_speed(self):
         xvelo, yvelo = self.velo
         # Returns hypotenuse of the velocity vectors
@@ -177,6 +181,7 @@ def play():
     stroke_count = 0
     hole_number = 1
     
+    
     balls = [Ball(160, 360), Ball(480, 360)]
     
     # Game Loop
@@ -191,9 +196,10 @@ def play():
                 initMousePos = pygame.mouse.get_pos()
             elif event.type == pygame.MOUSEBUTTONUP:
                 endMousePos = pygame.mouse.get_pos()
-                balls[0].hit_ball(initMousePos, endMousePos)
-                balls[1].hit_ball(initMousePos, endMousePos)
-                stroke_count = stroke_count + 1
+                if not balls[0].is_moving():
+                    balls[0].hit_ball(initMousePos, endMousePos)
+                    balls[1].hit_ball(initMousePos, endMousePos)
+                    stroke_count = stroke_count + 1
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     balls[0].reset()
