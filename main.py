@@ -230,20 +230,14 @@ def draw_objects():
     draw_hole_count()
 
 def draw_stroke_count():
-    stroke_text = font24.render("STROKES: " + str(stroke_count), True, (255, 255, 255))
-    stroke_location = stroke_text.get_rect(center=(window_w/2, 16))
-    
-    stroke_text_shadow = font24.render("STROKES: " + str(stroke_count), True, (0, 0, 0))
-    stroke_shadow_location = stroke_text_shadow.get_rect(center=(window_w/2, 19))
-    
+        
     # Create a temporary surface with alpha to allow transparency
     rect_surf = pygame.Surface((192, 32), pygame.SRCALPHA)
-    # Draw a semi-transparent black rect (alpha=128 out of 255)
     pygame.draw.rect(rect_surf, (0, 0, 0, 128), (0, 0, 192, 32), border_bottom_left_radius=5, border_bottom_right_radius=5)
     window.blit(rect_surf, ((window_w/2) - 96, 0))
     
-    window.blit(stroke_text_shadow, stroke_shadow_location)
-    window.blit(stroke_text, stroke_location)
+    draw_shadowed_text(font24, "STROKES: " + str(stroke_count), window_w/2, 19, 0, 0, 0)
+    draw_shadowed_text(font24, "STROKES: " + str(stroke_count), window_w/2, 16, 255, 255, 255)
     
 def draw_hole_count():
     
@@ -253,17 +247,9 @@ def draw_hole_count():
     left_surf = pygame.Surface((128, 32), pygame.SRCALPHA)
     pygame.draw.rect(left_surf, (0, 0, 0, 128), (0, 0, 128, 32), border_top_left_radius=5, border_top_right_radius=5)
     window.blit(left_surf, (96, window_h - 32))
-    
-    # Text
-    
-    left_hole_text = font24.render("HOLE: " + str(level), True, (255, 255, 255))
-    left_hole_location = left_hole_text.get_rect(center=(window_w/4, window_h - 16))
-    
-    left_hole_text_shadow = font24.render("HOLE: " + str(level), True, (0, 0, 0))
-    left_hole_shadow_location = left_hole_text_shadow.get_rect(center=(window_w/4, window_h - 13))
-    
-    window.blit(left_hole_text_shadow, left_hole_shadow_location)
-    window.blit(left_hole_text, left_hole_location)
+    # Text    
+    draw_shadowed_text(font24, "HOLE: " + str(level), window_w/4, window_h - 13, 0, 0, 0)
+    draw_shadowed_text(font24, "HOLE: " + str(level), window_w/4, window_h - 16, 255, 255, 255)
     
     
     # RIGHT SIDE
@@ -272,19 +258,14 @@ def draw_hole_count():
     right_surf = pygame.Surface((128, 32), pygame.SRCALPHA)
     pygame.draw.rect(right_surf, (0, 0, 0, 128), (0, 0, 128, 32), border_top_left_radius=5, border_top_right_radius=5)
     window.blit(right_surf, (window_w - 128 - 96, window_h - 32))
-    
     # Text
-    
-    right_hole_text = font24.render("HOLE: " + str(level + 1), True, (255, 255, 255))
-    right_hole_location = right_hole_text.get_rect(center=(3 * (window_w/4), window_h - 16))
-    
-    right_hole_text_shadow = font24.render("HOLE: " + str(level + 1), True, (0, 0, 0))
-    right_hole_shadow_location = right_hole_text_shadow.get_rect(center=(3 * (window_w/4), window_h - 13))
-    
-    window.blit(right_hole_text_shadow, right_hole_shadow_location)
-    window.blit(right_hole_text, right_hole_location)
-    
-    #TODO maybe create generalized methods for this
+    draw_shadowed_text(font24, "HOLE: " + str(level + 1), 3 * (window_w/4), window_h - 13, 0, 0, 0)
+    draw_shadowed_text(font24, "HOLE: " + str(level + 1), 3 * (window_w/4), window_h - 16, 255, 255, 255)
+
+def draw_shadowed_text(font: pygame.font.Font, words: str, x, y, r, g, b):
+    text = font.render(words, True, (r, g, b))
+    text_location = text.get_rect(center=(x, y))
+    window.blit(text, text_location)
 
     
 def update_objects():
