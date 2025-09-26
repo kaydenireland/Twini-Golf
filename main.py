@@ -28,6 +28,7 @@ swing_sfx = pygame.mixer.Sound("assets/sounds/swing.mp3")
 ball_img = pygame.image.load("assets/textures/ball.png")
 ball_shadow_img = pygame.image.load("assets/textures/ball_shadow.png")
 bg_img = pygame.image.load("assets/textures/bg.png")
+arrow_img = pygame.image.load("assets/textures/arrow.png")
 
 # Game Variables
 game_state = 1  # 0 - title, 1 - game, 2 - end
@@ -172,6 +173,8 @@ def play():
     global balls
     global stroke_count
     global level
+    global initMousePos
+    global mouse_pressed
     
     # ------------------------
     # Initialize Game Objects/Variables
@@ -179,6 +182,7 @@ def play():
     
     initMousePos = [0, 0]
     endMousePos = [0, 0]
+    mouse_pressed = False
     
     stroke_count = 0
     level = 1
@@ -196,12 +200,14 @@ def play():
                 sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 initMousePos = pygame.mouse.get_pos()
+                mouse_pressed = True
             elif event.type == pygame.MOUSEBUTTONUP:
                 endMousePos = pygame.mouse.get_pos()
                 if not balls[0].is_moving():
                     balls[0].hit_ball(initMousePos, endMousePos)
                     balls[1].hit_ball(initMousePos, endMousePos)
                     stroke_count = stroke_count + 1
+                mouse_pressed = False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     balls[0].reset()
@@ -228,8 +234,36 @@ def draw_objects():
     balls[0].draw()
     balls[1].draw()
     
+    if mouse_pressed == True and not balls[0].is_moving():
+        draw_arrow()
+    
     draw_stroke_count()
     draw_hole_count()
+    
+def draw_arrow():
+    currentMousePos = pygame.mouse.get_pos()
+    dx = currentMousePos[0] - initMousePos[0]
+    dy = currentMousePos[1] - initMousePos[1]
+    
+    angle = math.atan2(dx, dy)
+    angle = math.degrees(angle)
+    pivot = (arrow_img.get_width() / 2, arrow_img.get_height())
+
+    rotate_arrow(balls[0].pos[0], balls[0].pos[1], pivot, angle)
+    rotate_arrow(balls[1].pos[0], balls[1].pos[1], pivot, angle)
+    
+
+def rotate_arrow( xpos, ypos, pivot, angle):
+    
+    image_rect = arrow_img.get_rect(topleft=(0, 0))
+    
+    # Calculate the pivot vector (relative to image) and rotate image/vector
+    pivot_vector = pygame.math.Vector2(pivot) - image_rect.center
+    rotated_image = pygame.transform.rotate(arrow_img, angle)
+    rotated_rect = rotated_image.get_rect()
+    rotated_pivot = pivot_vector.rotate(-angle)
+    rotated_rect.center = (xpos + 8 - rotated_pivot.x, ypos + 8 - rotated_pivot.y)
+    window.blit(rotated_image, rotated_rect)
 
 def draw_stroke_count():
     
