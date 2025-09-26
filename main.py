@@ -26,6 +26,7 @@ swing_sfx = pygame.mixer.Sound("assets/sounds/swing.mp3")
 
 # Load Textures
 ball_img = pygame.image.load("assets/textures/ball.png")
+ball_shadow_img = pygame.image.load("assets/textures/ball_shadow.png")
 bg_img = pygame.image.load("assets/textures/bg.png")
 
 # Game Variables
@@ -45,6 +46,7 @@ class Ball:
         self.velo = [0, 0]
     
     def draw(self):
+        window.blit(ball_shadow_img, (self.pos[0], self.pos[1] + 4))
         window.blit(ball_img, (self.pos[0], self.pos[1]))
         
     def update(self):
@@ -230,37 +232,28 @@ def draw_objects():
     draw_hole_count()
 
 def draw_stroke_count():
-        
-    # Create a temporary surface with alpha to allow transparency
-    rect_surf = pygame.Surface((192, 32), pygame.SRCALPHA)
-    pygame.draw.rect(rect_surf, (0, 0, 0, 128), (0, 0, 192, 32), border_bottom_left_radius=5, border_bottom_right_radius=5)
-    window.blit(rect_surf, ((window_w/2) - 96, 0))
     
+    draw_rectangle((window_w/2) - 96, 0, 192, 32, 128, bblr=5, bbrr=5)
     draw_shadowed_text(font24, "STROKES: " + str(stroke_count), window_w/2, 19, 0, 0, 0)
     draw_shadowed_text(font24, "STROKES: " + str(stroke_count), window_w/2, 16, 255, 255, 255)
     
 def draw_hole_count():
     
     # LEFT SIDE
-    
-    # Rectangle
-    left_surf = pygame.Surface((128, 32), pygame.SRCALPHA)
-    pygame.draw.rect(left_surf, (0, 0, 0, 128), (0, 0, 128, 32), border_top_left_radius=5, border_top_right_radius=5)
-    window.blit(left_surf, (96, window_h - 32))
-    # Text    
+    draw_rectangle(96, window_h - 32, 128, 32, 128, btlr=5, btrr=5)
     draw_shadowed_text(font24, "HOLE: " + str(level), window_w/4, window_h - 13, 0, 0, 0)
     draw_shadowed_text(font24, "HOLE: " + str(level), window_w/4, window_h - 16, 255, 255, 255)
     
-    
     # RIGHT SIDE
-    
-    # Rectangle
-    right_surf = pygame.Surface((128, 32), pygame.SRCALPHA)
-    pygame.draw.rect(right_surf, (0, 0, 0, 128), (0, 0, 128, 32), border_top_left_radius=5, border_top_right_radius=5)
-    window.blit(right_surf, (window_w - 128 - 96, window_h - 32))
-    # Text
+    draw_rectangle(window_w - 128 - 96, window_h - 32, 128, 32, 128, btlr=5, btrr=5)
     draw_shadowed_text(font24, "HOLE: " + str(level + 1), 3 * (window_w/4), window_h - 13, 0, 0, 0)
     draw_shadowed_text(font24, "HOLE: " + str(level + 1), 3 * (window_w/4), window_h - 16, 255, 255, 255)
+
+def draw_rectangle(x, y, w, h, a, btlr=0, btrr=0, bblr=0, bbrr=0):
+    # Create Temporary Surface to Allow Transparent Rectangles
+    temp_surf = pygame.Surface((w, h), pygame.SRCALPHA)
+    pygame.draw.rect(temp_surf, (0, 0, 0, a), (0, 0, w, h), border_top_left_radius=btlr, border_top_right_radius=btrr, border_bottom_left_radius=bblr, border_bottom_right_radius=bbrr)
+    window.blit(temp_surf, (x, y))
 
 def draw_shadowed_text(font: pygame.font.Font, words: str, x, y, r, g, b):
     text = font.render(words, True, (r, g, b))
