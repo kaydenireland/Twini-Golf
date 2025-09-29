@@ -20,13 +20,14 @@ pygame.display.set_caption('Twini-Golf')
 
 # Load Font
 font24 = pygame.font.Font("assets/fonts/font.ttf", 24)
-font48 = pygame.font.Font("assets/fonts/font.ttf", 48)
+font32 = pygame.font.Font("assets/fonts/font.ttf", 32)
 
 # Load Sounds
 swing_sfx = pygame.mixer.Sound("assets/sounds/swing.mp3")
 
 # Load Textures
 icon = pygame.image.load("assets/textures/icon.png")
+title_logo = pygame.image.load("assets/textures/title_logo.png")
 ball_img = pygame.image.load("assets/textures/ball.png")
 ball_shadow_img = pygame.image.load("assets/textures/ball_shadow.png")
 bg_img = pygame.image.load("assets/textures/bg.png")
@@ -38,12 +39,16 @@ meter_fg = pygame.image.load("assets/textures/powermeter_fg.png")
 pygame.display.set_icon(icon)
 
 # Game Variables
-game_state = 1  # 0 - title, 1 - game, 2 - end
+game_state = 0  # 0 - title, 1 - game, 2 - end
 friction = .015
 fg_power_w, fg_power_h = meter_fg.get_size()
 power_offset = 4
 ball_width = 16
 max_ball_speed = 400
+
+title_pos = 88
+title_amplitude = 8
+title_speed = 2
 
 
 # ------------------------
@@ -203,6 +208,22 @@ def play():
     
     balls = [Ball(160, 360), Ball(480, 360)]
     
+    # Title Screen
+    while game_state == 0:
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONUP:
+                game_state = 1
+        
+        # Draw Objects
+        draw_objects()
+        # Update window
+        pygame.display.update()
+        
+    
     # Game Loop
     while game_state == 1:
         # Gameplay
@@ -225,11 +246,6 @@ def play():
                 if event.key == pygame.K_r:
                     balls[0].reset()
                     balls[1].reset()
-                
-                
-        # ------------------------
-        # 
-        # ------------------------
         
         #Update Objects
         update_objects()
@@ -238,27 +254,44 @@ def play():
         draw_objects()
         # Update window
         pygame.display.update()
-            
+
+
+# ------------------------
+# Draw Functions
+# ------------------------      
+
+def animate_title_logo():
+    time_now = pygame.time.get_ticks() / 1000.0  # seconds since pygame.init
+    offset = math.sin(time_now * title_speed) * title_amplitude
+    window.blit(title_logo, (160, title_pos + offset))
+
 
 def draw_objects():
     # Clear the screen
     window.blit(bg_img, (0, 0))
     
-    balls[0].draw()
-    balls[1].draw()
+    if game_state == 0:
+        animate_title_logo()
+        draw_rectangle(184, 328, 272, 48, 128, 5, 5, 5, 5)
+        draw_shadowed_text(font32, "LEFT CLICK TO START", 320, 352)
     
-    if mouse_pressed == True and not balls[0].is_moving():
-        draw_arrow()
+    elif game_state == 1:
+    
+        balls[0].draw()
+        balls[1].draw()
         
-        # Calculate speed continuously while dragging
-        curMousePos = pygame.mouse.get_pos()
-        x = initMousePos[0] - curMousePos[0]
-        y = initMousePos[1] - curMousePos[1]
-        speed = balls[0].get_potential_speed(x, y)
-        draw_power_box(speed)
-    
-    draw_stroke_count()
-    draw_hole_count()
+        if mouse_pressed == True and not balls[0].is_moving():
+            draw_arrow()
+            
+            # Calculate speed continuously while dragging
+            curMousePos = pygame.mouse.get_pos()
+            x = initMousePos[0] - curMousePos[0]
+            y = initMousePos[1] - curMousePos[1]
+            speed = balls[0].get_potential_speed(x, y)
+            draw_power_box(speed)
+        
+        draw_stroke_count()
+        draw_hole_count()
     
 def draw_power_box(speed):
     scale = min(speed / max_ball_speed, 1.0)
@@ -304,20 +337,17 @@ def rotate_arrow(xpos, ypos, pivot, angle):
 def draw_stroke_count():
     
     draw_rectangle((window_w/2) - 96, 0, 192, 32, 128, bblr=5, bbrr=5)
-    draw_shadowed_text(font24, "STROKES: " + str(stroke_count), window_w/2, 19, 0, 0, 0)
-    draw_shadowed_text(font24, "STROKES: " + str(stroke_count), window_w/2, 16, 255, 255, 255)
+    draw_shadowed_text(font24, "STROKES: " + str(stroke_count), window_w/2, 16)
     
 def draw_hole_count():
     
     # LEFT SIDE
     draw_rectangle(96, window_h - 32, 128, 32, 128, btlr=5, btrr=5)
-    draw_shadowed_text(font24, "HOLE: " + str(level), window_w/4, window_h - 13, 0, 0, 0)
-    draw_shadowed_text(font24, "HOLE: " + str(level), window_w/4, window_h - 16, 255, 255, 255)
+    draw_shadowed_text(font24, "HOLE: " + str(level), window_w/4, window_h - 16)
     
     # RIGHT SIDE
     draw_rectangle(window_w - 128 - 96, window_h - 32, 128, 32, 128, btlr=5, btrr=5)
-    draw_shadowed_text(font24, "HOLE: " + str(level + 1), 3 * (window_w/4), window_h - 13, 0, 0, 0)
-    draw_shadowed_text(font24, "HOLE: " + str(level + 1), 3 * (window_w/4), window_h - 16, 255, 255, 255)
+    draw_shadowed_text(font24, "HOLE: " + str(level + 1), 3 * (window_w/4), window_h - 16)
 
 def draw_rectangle(x, y, w, h, a, btlr=0, btrr=0, bblr=0, bbrr=0):
     # Create Temporary Surface to Allow Transparent Rectangles
@@ -325,12 +355,16 @@ def draw_rectangle(x, y, w, h, a, btlr=0, btrr=0, bblr=0, bbrr=0):
     pygame.draw.rect(temp_surf, (0, 0, 0, a), (0, 0, w, h), border_top_left_radius=btlr, border_top_right_radius=btrr, border_bottom_left_radius=bblr, border_bottom_right_radius=bbrr)
     window.blit(temp_surf, (x, y))
 
-def draw_shadowed_text(font: pygame.font.Font, words: str, x, y, r, g, b):
-    text = font.render(words, True, (r, g, b))
-    text_location = text.get_rect(center=(x, y))
-    window.blit(text, text_location)
-
+def draw_shadowed_text(font: pygame.font.Font, words: str, x, y):
+    w_text = font.render(words, True, (255, 255, 255))
+    b_text = font.render(words, True, (0, 0, 0))
     
+    w_text_location = w_text.get_rect(center=(x, y))
+    b_text_location = w_text.get_rect(center=(x, y+3))
+    
+    window.blit(b_text, b_text_location)
+    window.blit(w_text, w_text_location)
+
 def update_objects():
     balls[0].update()
     balls[1].update()
