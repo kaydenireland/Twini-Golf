@@ -31,13 +31,19 @@ ball_img = pygame.image.load("assets/textures/ball.png")
 ball_shadow_img = pygame.image.load("assets/textures/ball_shadow.png")
 bg_img = pygame.image.load("assets/textures/bg.png")
 arrow_img = pygame.image.load("assets/textures/arrow.png")
+meter_bg = pygame.image.load("assets/textures/powermeter_bg.png")
+meter_fg = pygame.image.load("assets/textures/powermeter_fg.png")
+
 
 pygame.display.set_icon(icon)
 
 # Game Variables
 game_state = 1  # 0 - title, 1 - game, 2 - end
 friction = .015
+fg_power_w, fg_power_h = meter_fg.get_size()
+power_offset = 4
 ball_width = 16
+max_ball_speed = 400
 
 
 # ------------------------
@@ -56,7 +62,7 @@ class Ball:
         
     def update(self):
         self.change_velocity()
-        self.check_for_collision(0, 0, window_w, window_h)
+        self.check_for_wall_collision(0, 0, window_w, window_h)
         self.change_position()
         
     # Getters/Setters
@@ -69,9 +75,12 @@ class Ball:
         # Returns hypotenuse of the velocity vectors
         return math.sqrt((xvelo*xvelo)+(yvelo*yvelo))
     
+    def get_potential_speed(self, x, y):
+        return math.sqrt((x*x)+(y*y))
+    
     def get_next_velocity(self):
         xvelo, yvelo = self.velo[0], self.velo[1]
-        speed = math.sqrt((xvelo*xvelo)+(yvelo*yvelo))
+        speed = self.get_potential_speed(xvelo, yvelo)
         
         if (speed > 0):
             xdir = xvelo / speed
@@ -138,7 +147,7 @@ class Ball:
         self.set_velocity(xvelo, yvelo)
         pygame.mixer.Sound.play(swing_sfx)
         
-    def check_for_collision(self, x, y, w, h):
+    def check_for_wall_collision(self, x, y, w, h):
         
         # Get Current Position
         xpos, ypos = self.pos[0], self.pos[1]
@@ -240,9 +249,33 @@ def draw_objects():
     
     if mouse_pressed == True and not balls[0].is_moving():
         draw_arrow()
+        
+        # Calculate speed continuously while dragging
+        curMousePos = pygame.mouse.get_pos()
+        x = initMousePos[0] - curMousePos[0]
+        y = initMousePos[1] - curMousePos[1]
+        speed = balls[0].get_potential_speed(x, y)
+        draw_power_box(speed)
     
     draw_stroke_count()
     draw_hole_count()
+    
+def draw_power_box(speed):
+    scale = min(speed / max_ball_speed, 1.0)
+    
+    new_height = (fg_power_h * scale)
+    
+    scaled_texture = pygame.transform.smoothscale(meter_fg, (fg_power_w, new_height))
+    
+    for ball in balls:
+        xpos, ypos = ball.pos[0], ball.pos[1]
+        xpos = xpos + 40
+        ypos = ypos - 32
+        
+        window.blit(meter_bg, (xpos, ypos))
+        window.blit(scaled_texture, (xpos + power_offset, ypos + power_offset + fg_power_h - new_height))
+    
+    
     
 def draw_arrow():
     currentMousePos = pygame.mouse.get_pos()
@@ -255,9 +288,8 @@ def draw_arrow():
 
     rotate_arrow(balls[0].pos[0], balls[0].pos[1], pivot, angle)
     rotate_arrow(balls[1].pos[0], balls[1].pos[1], pivot, angle)
-    
 
-def rotate_arrow( xpos, ypos, pivot, angle):
+def rotate_arrow(xpos, ypos, pivot, angle):
     
     image_rect = arrow_img.get_rect(topleft=(0, 0))
     
