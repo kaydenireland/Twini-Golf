@@ -25,11 +25,13 @@ font32 = pygame.font.Font("assets/fonts/font.ttf", 32)
 # Load Sounds
 swing_sfx = pygame.mixer.Sound("assets/sounds/swing.mp3")
 charge_sfx = pygame.mixer.Sound("assets/sounds/charge.mp3")
+hole_sfx = pygame.mixer.Sound("assets/sounds/hole.mp3")
 
 # Load Textures
 icon = pygame.image.load("assets/textures/icon.png")
 title_logo = pygame.image.load("assets/textures/title_logo.png")
 ball_img = pygame.image.load("assets/textures/ball.png")
+hole_img = pygame.image.load("assets/textures/hole.png")
 ball_shadow_img = pygame.image.load("assets/textures/ball_shadow.png")
 bg_img = pygame.image.load("assets/textures/bg.png")
 arrow_img = pygame.image.load("assets/textures/arrow.png")
@@ -58,20 +60,49 @@ charge_sfx_played = False
 # Classes
 # ------------------------
 
+class Hole:
+    def __init__(self, x, y):
+        self.pos = [x, y]
+    
+    def draw(self):
+        window.blit(hole_img, (self.pos[0], self.pos[1]))
+        
+    def change_position(self, x, y):
+        self.pos = [x, y]
+        
+    def update(self):
+        # Checks if ball goes in hole
+        
+        for ball in balls:
+            if not ball.finished:
+                # Distance between ball and hole center
+                dx = (ball.pos[0] + ball_width / 2) - (self.pos[0] + hole_img.get_width() / 2)
+                dy = (ball.pos[1] + ball_width / 2) - (self.pos[1] + hole_img.get_height() / 2)
+                dist = math.sqrt(dx * dx + dy * dy)
+
+                # If close enough, mark ball as finished
+                if dist < 8:  # tune this radius as needed
+                    ball.finished = True
+                    pygame.mixer.Sound.play(hole_sfx)
+                    ball.set_velocity(0, 0)
+
 class Ball:
     def __init__(self, x, y):
         self.init_pos = [x, y]
         self.pos = [x, y]
         self.velo = [0, 0]
+        self.finished = False
     
     def draw(self):
-        window.blit(ball_shadow_img, (self.pos[0], self.pos[1] + 4))
-        window.blit(ball_img, (self.pos[0], self.pos[1]))
+        if not self.finished:
+            window.blit(ball_shadow_img, (self.pos[0], self.pos[1] + 4))
+            window.blit(ball_img, (self.pos[0], self.pos[1]))
         
     def update(self):
-        self.change_velocity()
-        self.check_for_wall_collision(0, 0, window_w, window_h)
-        self.change_position()
+        if not self.finished:
+            self.change_velocity()
+            self.check_for_wall_collision(0, 0, window_w, window_h)
+            self.change_position()
         
     # Getters/Setters
     
@@ -116,6 +147,7 @@ class Ball:
         # Resets the ball to original position with no velocity
         self.set_velocity(0,0)
         self.set_position(self.init_pos[0], self.init_pos[1])
+        self.finished = False
         
     # Movement Methods
     
@@ -150,10 +182,11 @@ class Ball:
         self.set_velocity(xvelo, yvelo)
         
     def hit_ball(self, initialMousePos, endMousePos):
-        xvelo = -(endMousePos[0] - initialMousePos[0]) / 50
-        yvelo = -(endMousePos[1] - initialMousePos[1]) / 50
-        self.set_velocity(xvelo, yvelo)
-        pygame.mixer.Sound.play(swing_sfx)
+        if not self.finished:
+            xvelo = -(endMousePos[0] - initialMousePos[0]) / 50
+            yvelo = -(endMousePos[1] - initialMousePos[1]) / 50
+            self.set_velocity(xvelo, yvelo)
+            pygame.mixer.Sound.play(swing_sfx)
         
     def check_for_wall_collision(self, x, y, w, h):
         
@@ -192,6 +225,8 @@ def play():
     global game_state
     global friction
     global balls
+    global holes
+    global completed
     global stroke_count
     global level
     global initMousePos
@@ -211,6 +246,7 @@ def play():
     
     
     balls = [Ball(160, 360), Ball(480, 360)]
+    holes = [Hole(160, 64), Hole(496, 80)]
     
     # Title Screen
     while game_state == 0:
@@ -242,7 +278,7 @@ def play():
                 mouse_pressed = True
             elif event.type == pygame.MOUSEBUTTONUP:
                 endMousePos = pygame.mouse.get_pos()
-                if not balls[0].is_moving():
+                if (not balls[0].is_moving() and (not balls[0].finished or not balls[1].finished)):
                     balls[0].hit_ball(initMousePos, endMousePos)
                     balls[1].hit_ball(initMousePos, endMousePos)
                     stroke_count = stroke_count + 1
@@ -283,9 +319,13 @@ def draw_objects():
         draw_shadowed_text(font32, "LEFT CLICK TO START", 320, 352)
     
     elif game_state == 1:
+        
+        holes[0].draw()
+        holes[1].draw()
     
         balls[0].draw()
         balls[1].draw()
+        
         
         if mouse_pressed == True and not balls[0].is_moving():
             draw_arrow()
@@ -312,14 +352,15 @@ def draw_power_box(speed):
     scaled_texture = pygame.transform.smoothscale(meter_fg, (fg_power_w, new_height))
     
     for ball in balls:
-        xpos, ypos = ball.pos[0], ball.pos[1]
-        xpos = xpos + 40
-        ypos = ypos - 32
+        if not ball.finished:
+            xpos, ypos = ball.pos[0], ball.pos[1]
+            xpos = xpos + 40
+            ypos = ypos - 32
+            
+            window.blit(meter_bg, (xpos, ypos))
+            window.blit(scaled_texture, (xpos + power_offset, ypos + power_offset + fg_power_h - new_height))
         
-        window.blit(meter_bg, (xpos, ypos))
-        window.blit(scaled_texture, (xpos + power_offset, ypos + power_offset + fg_power_h - new_height))
-    
-    
+        
     
 def draw_arrow():
     currentMousePos = pygame.mouse.get_pos()
@@ -330,8 +371,10 @@ def draw_arrow():
     angle = math.degrees(angle)
     pivot = (arrow_img.get_width() / 2, arrow_img.get_height())
 
-    rotate_arrow(balls[0].pos[0], balls[0].pos[1], pivot, angle)
-    rotate_arrow(balls[1].pos[0], balls[1].pos[1], pivot, angle)
+    if not balls[0].finished:
+        rotate_arrow(balls[0].pos[0], balls[0].pos[1], pivot, angle)
+    if not balls[1].finished:
+        rotate_arrow(balls[1].pos[0], balls[1].pos[1], pivot, angle)
 
 def rotate_arrow(xpos, ypos, pivot, angle):
     
@@ -379,6 +422,9 @@ def draw_shadowed_text(font: pygame.font.Font, words: str, x, y):
 def update_objects():
     balls[0].update()
     balls[1].update()
+    
+    holes[0].update()
+    holes[1].update()
 
 
 if __name__ == "__main__":
