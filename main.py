@@ -24,6 +24,7 @@ font32 = pygame.font.Font("assets/fonts/font.ttf", 32)
 
 # Load Sounds
 swing_sfx = pygame.mixer.Sound("assets/sounds/swing.mp3")
+charge_sfx = pygame.mixer.Sound("assets/sounds/charge.mp3")
 
 # Load Textures
 icon = pygame.image.load("assets/textures/icon.png")
@@ -49,6 +50,8 @@ max_ball_speed = 400
 title_pos = 88
 title_amplitude = 8
 title_speed = 2
+
+charge_sfx_played = False
 
 
 # ------------------------
@@ -193,6 +196,7 @@ def play():
     global level
     global initMousePos
     global mouse_pressed
+    global charge_sfx_played
     
     # ------------------------
     # Initialize Game Objects/Variables
@@ -224,6 +228,7 @@ def play():
         pygame.display.update()
         
     
+    pygame.mixer.Sound.play(swing_sfx)
     # Game Loop
     while game_state == 1:
         # Gameplay
@@ -242,6 +247,7 @@ def play():
                     balls[1].hit_ball(initMousePos, endMousePos)
                     stroke_count = stroke_count + 1
                 mouse_pressed = False
+                charge_sfx_played = False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     balls[0].reset()
@@ -267,6 +273,7 @@ def animate_title_logo():
 
 
 def draw_objects():
+    global charge_sfx_played
     # Clear the screen
     window.blit(bg_img, (0, 0))
     
@@ -289,6 +296,10 @@ def draw_objects():
             y = initMousePos[1] - curMousePos[1]
             speed = balls[0].get_potential_speed(x, y)
             draw_power_box(speed)
+            
+            if charge_sfx_played == False:
+                charge_sfx_played = True
+                pygame.mixer.Sound.play(charge_sfx)
         
         draw_stroke_count()
         draw_hole_count()
